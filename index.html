@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XM Real Chart - BIT316 DEMO</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,sans-serif;background:#0e0e0e;color:#e9edf5}
+.banner{background:#d51820;color:white;text-align:center;padding:6px;font-size:10px;font-weight:700}
+.header{background:#000;display:flex;justify-content:space-between;padding:10px 16px;border-bottom:2px solid #d51820;flex-wrap:wrap;gap:8px}
+.app{display:grid;grid-template-columns:200px 1fr 300px;min-height:90vh}
+.left{background:#161616;border-right:1px solid #2a2a2a;padding:10px}
+.center{background:#000;display:flex;flex-direction:column}
+.chart-toolbar{display:flex;gap:6px;padding:8px 10px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;flex-wrap:wrap;align-items:center}
+.ct-btn{padding:5px 10px;background:#232323;border:1px solid #333;color:#ccc;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer}
+.ct-btn.active{background:#d51820;color:white;border-color:#d51820}
+#tvChart{width:100%;height:420px;background:#000}
+.right{background:#161616;border-left:1px solid #2a2a2a;padding:10px}
+.tabs{display:flex;background:#1a1a1a;border-bottom:1px solid #2a2a2a;margin:-10px -10px 10px}
+.tab{flex:1;padding:8px;text-align:center;font-size:11px;font-weight:700;color:#777;cursor:pointer;border-bottom:2px solid transparent}
+.tab.active{color:#d51820;border-color:#d51820;background:#000}
+.pane{display:none}.pane.active{display:block}
+input,select{width:100%;padding:8px;border-radius:4px;border:1px solid #333;background:#0e0e0e;color:white;font-size:12px;margin:4px 0}
+.btn{width:100%;padding:9px;border:none;border-radius:4px;font-weight:800;cursor:pointer;font-size:12px;margin-top:6px}
+.btn-buy{background:#179a53;color:white}.btn-sell{background:#d51820;color:white}.btn-dep{background:#d51820;color:white}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999}
+.mcard{background:#1a1a1a;border:1px solid #333;padding:18px;border-radius:8px;max-width:350px;width:90%;border-top:3px solid #d51820}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#d51820;color:white;padding:8px 16px;border-radius:4px;opacity:0;transition:.3s;z-index:10000;font-size:11px;font-weight:700}.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+@media(max-width:1100px){.app{grid-template-columns:1fr}#tvChart{height:320px}}
+</style>
+</head>
+<body>
+<div class="banner">BIT316 DEMO - REAL MOVABLE CHART (TradingView Lightweight Charts) - CoinGecko Live - No Real Money - Study Only</div>
+<div class="header"><div style="font-weight:800">XM STUDY TERMINAL <span style="color:#d51820;font-size:10px">REAL CHART</span></div><div style="display:flex;gap:12px;align-items:center;font-size:12px"><span id="uEmail" style="color:#d51820"></span><span id="bal" style="font-weight:800;color:white">$0 DEMO</span><span id="apiSt" style="color:#179a53">● Live</span><button id="logout" style="padding:3px 8px;background:#232323;border:1px solid #333;color:white;border-radius:4px;font-size:10px">Logout</button></div></div>
+
+<div id="loginM" class="modal"><div class="mcard"><h3>Login DEMO (to see movable chart)</h3><input id="lEmail" placeholder="student@strathmore.edu" style="margin-top:10px"><input id="lPass" type="password" placeholder="any password"><button id="lBtn" class="btn btn-dep">ENTER TERMINAL</button><button onclick="localStorage.setItem('xm2_user',JSON.stringify({email:'guest@demo.com'}));location.reload()" class="btn" style="background:#232323;color:white;border:1px solid #333;margin-top:6px">Guest Skip</button></div></div>
+
+<div class="app">
+<div class="left"><div style="font-size:10px;color:#888;text-transform:uppercase;margin-bottom:6px">Market Watch Live</div><div id="watch"></div><div style="margin-top:14px;font-size:10px;color:#666">Chart: Drag to move, Scroll to zoom, Pinch on mobile. Like real XM MT5.</div></div>
+<div class="center">
+<div class="chart-toolbar">
+<span style="font-size:11px;font-weight:800">BTCUSD</span><span id="btcP" style="font-size:12px;font-weight:700">$--</span><span id="btcChg" style="font-size:10px;padding:2px 6px;border-radius:3px;background:#179a53;color:white">--</span>
+<div style="width:1px;height:18px;background:#333;margin:0 4px"></div>
+<button class="ct-btn active" data-type="candle">Candles</button>
+<button class="ct-btn" data-type="line">Line</button>
+<button class="ct-btn" data-type="area">Area</button>
+<button class="ct-btn" data-type="bars">Bars</button>
+<button class="ct-btn" data-type="baseline">Baseline</button>
+<button class="ct-btn" data-type="volume">+ Volume</button>
+<div style="width:1px;height:18px;background:#333;margin:0 4px"></div>
+<button class="ct-btn" data-tf="1m">1m</button><button class="ct-btn" data-tf="5m">5m</button><button class="ct-btn active" data-tf="15m">15m</button><button class="ct-btn" data-tf="1h">1H</button>
+<span style="font-size:10px;color:#888;margin-left:6px" id="volTxt">Vol: --</span>
+</div>
+<div id="tvChart"></div>
+<div style="display:flex;background:#1a1a1a;border-top:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a">
+<div class="tab active" data-pane="trade">New Order (Movable Chart)</div><div class="tab" data-pane="odd">Odd/Even Study</div><div class="tab" data-pane="hist">History</div><div class="tab" data-pane="wallet">Funds</div>
+</div>
+<div id="pane-trade" class="pane active" style="padding:10px">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="amt" type="number" value="0.10" step="0.01" placeholder="Volume"><div style="font-size:11px">Cost: <b id="costTxt">$0</b> | Last Digit: <b id="lastD">--</b></div></div>
+<div style="display:flex;gap:8px;margin-top:8px"><button id="buyBtn" class="btn btn-buy">BUY</button><button id="sellBtn" class="btn btn-sell">SELL</button></div>
+</div>
+<div id="pane-odd" class="pane" style="padding:10px"><div style="display:flex;gap:8px"><button id="predOdd" class="btn btn-buy">ODD</button><button id="predEven" class="btn btn-sell">EVEN</button></div><input id="oddStake" type="number" value="100"><div id="oddRes" style="font-size:11px;background:#0e0e0e;border:1px solid #333;padding:6px;border-radius:4px;margin-top:6px">Waiting...</div></div>
+<div id="pane-hist" class="pane" style="padding:10px"><div id="histList"></div></div>
+<div id="pane-wallet" class="pane" style="padding:10px"><input id="depAmt" type="number" placeholder="Deposit DEMO"><button id="depBtn" class="btn btn-dep">Deposit Fake</button><input id="withAmt" type="number" placeholder="Withdraw DEMO" style="margin-top:8px"><button id="withBtn" class="btn" style="background:#232323;color:white;border:1px solid #333">Withdraw Fake</button></div>
+</div>
+<div class="right"><div class="tabs"><div class="tab active">Info</div></div><div style="font-size:11px;line-height:18px"><div>High: <b id="vHigh">--</b></div><div>Low: <b id="vLow">--</b></div><div>ATR: <b id="vATR">--</b></div><div>Chart: <b>Movable + Zoomable</b></div><div style="margin-top:8px;color:#888">How it works (study):<br>• Candle = Open/High/Low/Close from live price<br>• Drag = pan, Scroll = zoom<br>• Area/Line/Baseline = same data different view<br>• Volume = fake but realistic</div></div></div>
+</div>
+
+<div id="toast" class="toast"><span id="tText"></span></div>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+let btc=0,user=JSON.parse(localStorage.getItem('xm2_user')||'null'),bal=parseFloat(localStorage.getItem('xm2_bal')||'24562.8'),txs=JSON.parse(localStorage.getItem('xm2_hist')||'[]');
+let chart, candleSeries, lineSeries, areaSeries, baselineSeries, barSeries, volumeSeries;
+let currentType='candle', candleData=[], lastCandle=null;
+function fmt(v){return v<1?'$'+v.toFixed(4):'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function toast(m){$('tText').textContent=m;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),3000)}
+function save(){localStorage.setItem('xm2_bal',bal);localStorage.setItem('xm2_hist',JSON.stringify(txs));$('bal').textContent=fmt(bal)+' DEMO';renderHist();}
+function addTx(t,d,a){txs.unshift({time:new Date().toLocaleTimeString(),type:t,detail:d,amt:a,bal});save();}
+function renderHist(){$('histList').innerHTML=txs.length?txs.map(x=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #222;font-size:11px"><span><b>${x.type}</b><br><span style="color:#888;font-size:10px">${x.detail}</span></span><span>${x.amt?fmt(x.amt):''}</span></div>`).join(''):'<div style="color:#666;font-size:11px">No history</div>';}
+function initChart(){
+const container=$('tvChart');
+chart=LightweightCharts.createChart(container,{layout:{background:{color:'#000'},textColor:'#888'},grid:{vertLines:{color:'#1a1a1a'},horzLines:{color:'#1a1a1a'}},crosshair:{mode:1},rightPriceScale:{borderColor:'#333'},timeScale:{borderColor:'#333',timeVisible:true,secondsVisible:false},handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:true},handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true}});
+candleSeries=chart.addCandlestickSeries({upColor:'#179a53',downColor:'#d51820',borderVisible:false,wickUpColor:'#179a53',wickDownColor:'#d51820'});
+lineSeries=chart.addLineSeries({color:'#d51820',lineWidth:2,visible:false});
+areaSeries=chart.addAreaSeries({topColor:'rgba(213,24,32,0.4)',bottomColor:'rgba(213,24,32,0)',lineColor:'#d51820',lineWidth:2,visible:false});
+baselineSeries=chart.addBaselineSeries({baseValue:{type:'price',price:65000},topLineColor:'#179a53',bottomLineColor:'#d51820',visible:false});
+barSeries=chart.addBarSeries({upColor:'#179a53',downColor:'#d51820',visible:false});
+volumeSeries=chart.addHistogramSeries({color:'#232323',priceFormat:{type:'volume'},priceScaleId:'',visible:false});
+// initial fake 100 candles
+let now=Math.floor(Date.now()/1000)-100*60;let price=65000;
+for(let i=0;i<100;i++){const open=price;const change=(Math.random()-0.5)*200;price+=change;const high=Math.max(open,price)+Math.random()*80;const low=Math.min(open,price)-Math.random()*80;const close=price;candleData.push({time:now+i*60,open,high,low,close});}
+candleSeries.setData(candleData);
+lineSeries.setData(candleData.map(c=>({time:c.time,value:c.close})));
+areaSeries.setData(candleData.map(c=>({time:c.time,value:c.close})));
+baselineSeries.setData(candleData.map(c=>({time:c.time,value:c.close})));
+barSeries.setData(candleData.map(c=>({time:c.time,open:c.open,high:c.high,low:c.low,close:c.close})));
+volumeSeries.setData(candleData.map(c=>({time:c.time,value:Math.random()*100+20,color:c.close>=c.open?'rgba(23,154,83,0.5)':'rgba(213,24,32,0.5)'})));
+chart.timeScale().fitContent();
+// make chart movable - already enabled by handleScroll/handleScale
+new ResizeObserver(()=>chart.applyOptions({width:container.clientWidth,height:container.clientHeight})).observe(container);
+}
+function switchType(type){
+currentType=type;document.querySelectorAll('[data-type]').forEach(b=>b.classList.remove('active'));document.querySelector(`[data-type="${type}"]`)?.classList.add('active');
+candleSeries.applyOptions({visible:type==='candle'});lineSeries.applyOptions({visible:type==='line'});areaSeries.applyOptions({visible:type==='area'});baselineSeries.applyOptions({visible:type==='baseline'});barSeries.applyOptions({visible:type==='bars'});
+if(type==='volume'){volumeSeries.applyOptions({visible:true});}else if(currentType!=='volume'){volumeSeries.applyOptions({visible:document.querySelector('[data-type="volume"].active')!==null});}
+}
+function checkLogin(){if(user){$('loginM').style.display='none';$('uEmail').textContent=user.email;}else{$('loginM').style.display='flex';}save();}
+$('lBtn').onclick=()=>{const e=$('lEmail').value.trim();if(!e)return alert('email');user={email:e};localStorage.setItem('xm2_user',JSON.stringify(user));checkLogin();toast('Login '+e);};
+$('logout').onclick=()=>{localStorage.removeItem('xm2_user');user=null;checkLogin();};
+document.querySelectorAll('[data-type]').forEach(b=>{if(b.dataset.type!=='volume')b.onclick=()=>switchType(b.dataset.type);else b.onclick=()=>{b.classList.toggle('active');volumeSeries.applyOptions({visible:b.classList.contains('active')});};});
+document.querySelectorAll('.tab[data-pane]').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab[data-pane]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('pane-'+t.dataset.pane).classList.add('active');});
+function updCost(){$('costTxt').textContent=fmt((parseFloat($('amt').value||0)*btc));} $('amt').oninput=updCost;
+$('buyBtn').onclick=()=>{const a=parseFloat($('amt').value||0);const cost=a*btc;if(cost>bal)return toast('No margin');bal-=cost;addTx('BUY','Buy '+a+' @ '+fmt(btc),cost);toast('BUY DEMO');};
+$('sellBtn').onclick=()=>{const a=parseFloat($('amt').value||0);const cost=a*btc;bal+=cost;addTx('SELL','Sell '+a+' @ '+fmt(btc),cost);toast('SELL DEMO');};
+$('depBtn').onclick=()=>{const v=parseFloat($('depAmt').value);if(!v)return;bal+=v;addTx('DEPOSIT','Fake deposit',v);save();toast('+'+fmt(v));};
+$('withBtn').onclick=()=>{const v=parseFloat($('withAmt').value);if(!v||v>bal)return toast('Insufficient');bal-=v;addTx('WITHDRAW','Fake withdraw',v);save();toast('-'+fmt(v));};
+let pending=null;
+$('predOdd').onclick=()=>startOdd('ODD');$('predEven').onclick=()=>startOdd('EVEN');
+function startOdd(type){if(pending)return toast('Wait');const stake=parseFloat($('oddStake').value||0);if(stake>bal)return toast('No bal');bal-=stake;save();$('oddRes').textContent=`Predicting ${type} - wait 10s - last digit ${$('lastD').textContent}`;pending={type,stake};setTimeout(()=>{const ld=Math.floor(btc)%10;const isOdd=ld%2===1;const won=(type==='ODD'&&isOdd)||(type==='EVEN'&&!isOdd);if(won){const win=stake*1.9;bal+=win;addTx('WIN',type+' digit '+ld,win);$('oddRes').innerHTML=`WIN digit ${ld} +${fmt(win-stake)}`;}else{addTx('LOSS',type+' digit '+ld,-stake);$('oddRes').innerHTML=`LOSS digit ${ld} -${fmt(stake)}`;}save();pending=null;},10000);}
+
+async function fetchLive(){
+try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,cardano,dogecoin&vs_currencies=usd&include_24hr_change=true');const d=await r.json();btc=d.bitcoin.usd;const now=Math.floor(Date.now()/1000);
+if(candleData.length===0){}else{
+const last=candleData[candleData.length-1];
+if(now-last.time>=60){ // new candle
+const open=last.close;const high=Math.max(open,btc)+Math.random()*50;const low=Math.min(open,btc)-Math.random()*50;
+const nc={time:now,open,high,low,close:btc};candleData.push(nc);if(candleData.length>200)candleData.shift();
+candleSeries.setData(candleData);lineSeries.setData(candleData.map(c=>({time:c.time,value:c.close})));areaSeries.setData(candleData.map(c=>({time:c.time,value:c.close})));baselineSeries.setData(candleData.map(c=>({time:c.time,value:c.close})));barSeries.setData(candleData);volumeSeries.setData(candleData.map(c=>({time:c.time,value:Math.random()*100+20,color:c.close>=c.open?'rgba(23,154,83,0.5)':'rgba(213,24,32,0.5)'})));
+}else{ // update current candle
+last.close=btc;last.high=Math.max(last.high,btc);last.low=Math.min(last.low,btc);candleSeries.update(last);lineSeries.update({time:last.time,value:btc});areaSeries.update({time:last.time,value:btc});baselineSeries.update({time:last.time,value:btc});barSeries.update(last);
+}
+}
+$('btcP').textContent=fmt(btc);const chg=d.bitcoin.usd_24h_change||0;$('btcChg').textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';$('btcChg').style.background=chg>=0?'#179a53':'#d51820';
+$('lastD').textContent=(Math.floor(btc)%10)+' '+(Math.floor(btc)%2?'ODD':'EVEN');updCost();
+const hi=Math.max(...candleData.slice(-20).map(c=>c.high)),lo=Math.min(...candleData.slice(-20).map(c=>c.low));$('vHigh').textContent=fmt(hi);$('vLow').textContent=fmt(lo);$('volTxt').textContent='Vol: '+fmt(hi-lo);$('vATR').textContent=fmt(hi-lo);
+const list=[{id:'bitcoin',s:'BTCUSD'},{id:'ethereum',s:'ETHUSD'},{id:'solana',s:'SOLUSD'},{id:'ripple',s:'XRPUSD'},{id:'cardano',s:'ADAUSD'}];
+$('watch').innerHTML=list.map(it=>{const inf=d[it.id];return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #222;font-size:11px"><span>${it.s}</span><span>${inf?fmt(inf.usd).replace('$',''): '--'} <span style="color:${(inf?.usd_24h_change||0)>=0?'#179a53':'#d51820'}">${(inf?.usd_24h_change||0).toFixed(1)}%</span></span></div>`}).join('');
+$('apiSt').textContent='● Live CoinGecko';
+}catch(e){$('apiSt').textContent='● Retry...';}
+}
+initChart();checkLogin();fetchLive();setInterval(fetchLive,15000);
+})();
+</script>
+</body>
+</html>
